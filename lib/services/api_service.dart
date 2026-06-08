@@ -1,12 +1,12 @@
 import 'dart:convert';
+import 'package:flutter/material.dart'; // Ditambahkan untuk mendukung debugPrint jika diperlukan
 import 'package:http/http.dart' as http;
 import '../models/celengan_model.dart';
 
 class ApiService {
-  // Gunakan 'localhost' untuk Real Device (HP Fisik) / Web, atau '10.0.2.2' untuk Emulator Android
   static const String baseUrl = 'http://localhost/api-celenganku/celengan.php';
 
-  // 1. READ: Mengambil seluruh daftar celengan user secara asinkron
+  // 1. READ: Ambil data
   Future<List<CelenganModel>> getAllCelengan() async {
     try {
       final response = await http.get(Uri.parse(baseUrl));
@@ -27,7 +27,7 @@ class ApiService {
     }
   }
 
-  // 2. CREATE: Menambahkan celengan target baru ke MySQL
+  // 2. CREATE: Tambah celengan
   Future<bool> createCelengan(String nama, double target, {String emoji = '💰'}) async {
     try {
       final response = await http.post(
@@ -36,7 +36,7 @@ class ApiService {
         body: json.encode({
           'nama': nama,
           'target': target,
-          'emoji': emoji, // Menyimpan simbol pelacak keuangan pilihan
+          'emoji': emoji,
         }),
       );
 
@@ -46,12 +46,13 @@ class ApiService {
       }
       return false;
     } catch (e) {
-      print('Error pada CreateCelengan: $e');
+      // PERBAIKAN: Menggunakan debugPrint menggantikan print biasa
+      debugPrint('Error pada CreateCelengan: $e');
       return false;
     }
   }
 
-  // 3. UPDATE: Mengubah nama atau nominal target celengan
+  // 3. UPDATE: Edit celengan
   Future<bool> updateCelengan(int id, String nama, double target) async {
     try {
       final response = await http.put(
@@ -69,12 +70,13 @@ class ApiService {
       }
       return false;
     } catch (e) {
-      print('Error pada UpdateCelengan: $e');
+      // PERBAIKAN: Menggunakan debugPrint menggantikan print biasa
+      debugPrint('Error pada UpdateCelengan: $e');
       return false;
     }
   }
 
-  // 4. DELETE: Menghapus celengan dari sistem database
+  // 4. DELETE: Hapus celengan
   Future<bool> deleteCelengan(int id) async {
     try {
       final response = await http.delete(Uri.parse('$baseUrl/$id'));
@@ -85,12 +87,13 @@ class ApiService {
       }
       return false;
     } catch (e) {
-      print('Error pada DeleteCelengan: $e');
+      // PERBAIKAN: Menggunakan debugPrint menggantikan print biasa
+      debugPrint('Error pada DeleteCelengan: $e');
       return false;
     }
   }
 
-  // 5. UPDATE SALDO: Menabung ke celengan tertentu
+  // 5. UPDATE SALDO: Menabung
   Future<bool> tambahSaldoCelengan(int id, double nominal) async {
     try {
       final response = await http.post(
@@ -107,7 +110,8 @@ class ApiService {
       }
       return false;
     } catch (e) {
-      print('Error pada TambahSaldoCelengan: $e');
+      // PERBAIKAN: Menggunakan debugPrint menggantikan print biasa
+      debugPrint('Error pada TambahSaldoCelengan: $e');
       return false;
     }
   }
