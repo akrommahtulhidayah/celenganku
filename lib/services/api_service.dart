@@ -1,16 +1,15 @@
 import 'dart:convert';
-import 'package:flutter/material.dart'; // Ditambahkan untuk mendukung debugPrint jika diperlukan
+import 'package:flutter/material.dart'; 
 import 'package:http/http.dart' as http;
 import '../models/celengan_model.dart';
 
 class ApiService {
   static const String baseUrl = 'http://localhost/api-celenganku/celengan.php';
 
-  // 1. READ: Ambil data
+  // 1. READ: Ambil semua data celengan
   Future<List<CelenganModel>> getAllCelengan() async {
     try {
       final response = await http.get(Uri.parse(baseUrl));
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         if (responseData['status'] == true) {
@@ -27,8 +26,8 @@ class ApiService {
     }
   }
 
-  // 2. CREATE: Tambah celengan
-  Future<bool> createCelengan(String nama, double target, {String emoji = '💰'}) async {
+  // 2. CREATE: Tambah celengan baru
+  Future<bool> createCelengan(String nama, double target, {String emoji = '🪙'}) async {
     try {
       final response = await http.post(
         Uri.parse(baseUrl),
@@ -39,20 +38,18 @@ class ApiService {
           'emoji': emoji,
         }),
       );
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         return responseData['status'] == true;
       }
       return false;
     } catch (e) {
-      // PERBAIKAN: Menggunakan debugPrint menggantikan print biasa
       debugPrint('Error pada CreateCelengan: $e');
       return false;
     }
   }
 
-  // 3. UPDATE: Edit celengan
+  // 3. UPDATE: Edit data celengan
   Future<bool> updateCelengan(int id, String nama, double target) async {
     try {
       final response = await http.put(
@@ -63,14 +60,12 @@ class ApiService {
           'target': target,
         }),
       );
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         return responseData['status'] == true;
       }
       return false;
     } catch (e) {
-      // PERBAIKAN: Menggunakan debugPrint menggantikan print biasa
       debugPrint('Error pada UpdateCelengan: $e');
       return false;
     }
@@ -80,14 +75,12 @@ class ApiService {
   Future<bool> deleteCelengan(int id) async {
     try {
       final response = await http.delete(Uri.parse('$baseUrl/$id'));
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         return responseData['status'] == true;
       }
       return false;
     } catch (e) {
-      // PERBAIKAN: Menggunakan debugPrint menggantikan print biasa
       debugPrint('Error pada DeleteCelengan: $e');
       return false;
     }
@@ -103,14 +96,12 @@ class ApiService {
           'nominal': nominal,
         }),
       );
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         return responseData['status'] == true;
       }
       return false;
     } catch (e) {
-      // PERBAIKAN: Menggunakan debugPrint menggantikan print biasa
       debugPrint('Error pada TambahSaldoCelengan: $e');
       return false;
     }
