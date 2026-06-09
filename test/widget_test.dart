@@ -11,7 +11,7 @@ import 'package:celenganku/main.dart';
 void main() {
   testWidgets('CelenganKu App initial route smoke test', (WidgetTester tester) async {
     // Membangun aplikasi CelenganKu dan memicu frame pertama.
-    await tester.pumpWidget(const CelenganKuApp());
+    await tester.pumpWidget(const CelenganKuApp(initialRoute: '/login'));
 
     // Memverifikasi bahwa aplikasi berhasil memuat halaman awal (SplashScreen)
     // dengan mencari teks placeholder yang sudah kita buat sebelumnya.

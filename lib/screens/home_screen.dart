@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/celengan_model.dart';
 import '../services/api_service.dart';
 import '../widgets/celengan_card.dart'; 
@@ -12,6 +13,31 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ApiService _apiService = ApiService();
+  String _userName = 'Pengguna'; // Variabel penampung nama pengguna dari sesi
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData(); // Muat data sesi saat halaman pertama kali dibuka
+  }
+
+  // Fungsi membaca data dari SharedPreferences
+  void _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('user_name') ?? 'Pengguna';
+    });
+  }
+
+  // Fungsi menghapus sesi ketika tombol logout ditekan
+  void _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Menghapus seluruh token, id, dan nama user di lokal
+
+    if (!mounted) return;
+    // Pindahkan pengguna kembali ke halaman login secara bersih
+    Navigator.pushReplacementNamed(context, '/login');
+  }
 
   // ========================================================
   // 1. DIALOG FORM (CREATE & UPDATE)
@@ -58,12 +84,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 sukses = await _apiService.createCelengan(nama, target, emoji: '🪙');
               }
 
-              // Mencegah kebocoran context setelah operasi asinkronus selesai
               if (!mounted) return;
 
               if (sukses) {
-                Navigator.of(context).pop(); // Berhasil: Menutup dialog dengan context state yang valid
-                setState(() {}); // Segarkan UI
+                Navigator.of(context).pop(); 
+                setState(() {}); // Segarkan UI (Read ulang data)
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Gagal menyimpan data ke server.')),
@@ -98,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (!mounted) return;
 
               if (sukses) {
-                Navigator.of(context).pop(); // Berhasil: Menutup dialog konfirmasi hapus
+                Navigator.of(context).pop(); 
                 setState(() {}); // Segarkan UI
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -120,8 +145,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CelenganKu'),
-        centerTitle: true,
+        title: Text('CelenganKu ($_userName)'), // MENAMPILKAN BUKTI SESI USER AKTIF
+        centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.red),
+            tooltip: 'Keluar Akun',
+            onPressed: _logout, // Memicu proses hapus sesi
+          ),
+        ],
       ),
       body: FutureBuilder<List<CelenganModel>>(
         future: _apiService.getAllCelengan(),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -6,12 +7,20 @@ import 'screens/home_screen.dart';
 import 'screens/add_celengan_screen.dart';
 import 'screens/detail_celengan_screen.dart';
 
-void main() {
-  runApp(const CelenganKuApp());
+void main() async {
+  // Memastikan binding Flutter siap sebelum membaca SharedPreferences
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  final prefs = await SharedPreferences.getInstance();
+  final String? token = prefs.getString('token');
+
+  runApp(CelenganKuApp(initialRoute: token != null ? '/home' : '/login'));
 }
 
 class CelenganKuApp extends StatelessWidget {
-  const CelenganKuApp({super.key});
+  final String initialRoute;
+  
+  const CelenganKuApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -22,10 +31,10 @@ class CelenganKuApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         useMaterial3: true,
       ),
-      // Rute awal aplikasi mengarah ke Splash Screen
-      initialRoute: '/',
+      // Rute awal ditentukan berdasarkan keberadaan token sesi
+      initialRoute: initialRoute,
       routes: {
-        '/': (context) => const SplashScreen(),
+        '/splash': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => const HomeScreen(),
