@@ -5,9 +5,14 @@ class AddCelenganScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Add Celengan Screen', style: TextStyle(fontSize: 24)),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Tambah Impian'),
+      ),
+      body: const SafeArea(
+        child: Center(
+          child: Text('Formulir Tambah Data (Gunakan tombol + di halaman utama)'),
+        ),
       ),
     );
   }

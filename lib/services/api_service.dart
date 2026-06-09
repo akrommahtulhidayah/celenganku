@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/celengan_model.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost/api-celenganku/celengan.php';
+  static const String baseUrl = 'http://192.168.1.226/api-celenganku/celengan.php';
 
   // 1. READ: Ambil semua data celengan
   Future<List<CelenganModel>> getAllCelengan() async {
