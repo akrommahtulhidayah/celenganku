@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "373014830594",
+    "project_id": "celenganku-a3cdc",
+    "storage_bucket": "celenganku-a3cdc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:373014830594:android:6e3dcb263ad06aafad511b",
+        "android_client_info": {
+          "package_name": "com.example.celenganku"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "373014830594-tq8gu76r1hku7s9hjdo12kj94ts6h8ni.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.celenganku",
+            "certificate_hash": "934255857815aa86d894f6328058c4258e6ea549"
+          }
+        },
+        {
+          "client_id": "373014830594-2o9c2vr8cbrejr9n68bvij3ebm462nsa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDE9IKcGeO7OOSq3iniGizVibZ58J9Eg98"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "373014830594-2o9c2vr8cbrejr9n68bvij3ebm462nsa.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

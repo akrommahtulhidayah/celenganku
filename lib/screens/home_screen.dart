@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/celengan_model.dart';
-import '../services/api_service.dart';
-import '../widgets/celengan_card.dart'; 
+import '../providers/celengan_provider.dart';
+import '../widgets/celengan_card.dart';
+import '../services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,182 +15,267 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final ApiService _apiService = ApiService();
-  String _userName = 'Pengguna'; // Variabel penampung nama pengguna dari sesi
+  String _userName = 'Pengguna';
 
   @override
   void initState() {
     super.initState();
-    _loadUserData(); // Muat data sesi saat halaman pertama kali dibuka
+
+    _loadUserData();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CelenganProvider>().fetchAllCelengan();
+    });
   }
 
-  // Fungsi membaca data dari SharedPreferences
-  void _loadUserData() async {
+  Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
+
+    if (!mounted) return;
+
     setState(() {
       _userName = prefs.getString('user_name') ?? 'Pengguna';
     });
   }
 
-  // Fungsi menghapus sesi ketika tombol logout ditekan
-  void _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Menghapus seluruh token, id, dan nama user di lokal
+  Future<void> _logout() async {
+    final navigator = Navigator.of(context);
+
+    final authService = AuthService();
+
+    await authService.signOut();
 
     if (!mounted) return;
-    // Pindahkan pengguna kembali ke halaman login secara bersih
-    Navigator.pushReplacementNamed(context, '/login');
+
+    navigator.pushReplacementNamed('/login');
   }
 
-  // ========================================================
-  // 1. DIALOG FORM (CREATE & UPDATE)
-  // ========================================================
   void _bukaFormDialog([CelenganModel? celengan]) {
-    final isEdit = celengan != null;
-    final namaController = TextEditingController(text: isEdit ? celengan.nama : '');
-    final targetController = TextEditingController(text: isEdit ? celengan.target.toString() : '');
+    final bool isEdit = celengan != null;
+
+    final namaController = TextEditingController(
+      text: isEdit ? celengan.nama : '',
+    );
+
+    final targetController = TextEditingController(
+      text: isEdit ? celengan.target.toString() : '',
+    );
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(isEdit ? 'Ubah Celengan' : 'Buat Celengan Baru'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: namaController,
-              decoration: const InputDecoration(labelText: 'Nama Celengan (Impian)'),
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(
+            isEdit ? 'Ubah Celengan' : 'Tambah Celengan',
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: namaController,
+                decoration: const InputDecoration(
+                  labelText: 'Nama Celengan',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: targetController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Target Nominal',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal'),
             ),
-            TextField(
-              controller: targetController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Target Nominal (Rp)'),
+            ElevatedButton(
+              onPressed: () async {
+                final navigator = Navigator.of(ctx);
+                final messenger =
+                    ScaffoldMessenger.of(context);
+
+                if (namaController.text.isEmpty ||
+                    targetController.text.isEmpty) {
+                  return;
+                }
+
+                final nama = namaController.text;
+
+                final target =
+                    double.tryParse(
+                          targetController.text,
+                        ) ??
+                        0;
+
+                final provider =
+                    context.read<CelenganProvider>();
+
+                bool sukses = false;
+
+                if (isEdit) {
+                  sukses =
+                      await provider.editCelengan(
+                    celengan!.id,
+                    nama,
+                    target,
+                  );
+                } else {
+                  sukses =
+                      await provider.addCelengan(
+                    nama,
+                    target,
+                  );
+                }
+
+                if (!mounted) return;
+
+                navigator.pop();
+
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      sukses
+                          ? (isEdit
+                              ? 'Data berhasil diubah'
+                              : 'Data berhasil ditambahkan')
+                          : 'Gagal menyimpan data',
+                    ),
+                  ),
+                );
+              },
+              child: Text(
+                isEdit ? 'Simpan' : 'Tambah',
+              ),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (namaController.text.isEmpty || targetController.text.isEmpty) return;
-
-              final nama = namaController.text;
-              final target = double.parse(targetController.text);
-              bool sukses = false;
-
-              if (isEdit) {
-                sukses = await _apiService.updateCelengan(celengan.id, nama, target);
-              } else {
-                sukses = await _apiService.createCelengan(nama, target, emoji: '🪙');
-              }
-
-              if (!mounted) return;
-
-              if (sukses) {
-                Navigator.of(context).pop(); 
-                setState(() {}); // Segarkan UI (Read ulang data)
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Gagal menyimpan data ke server.')),
-                );
-              }
-            },
-            child: Text(isEdit ? 'Simpan' : 'Tambah'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  // ========================================================
-  // 2. DIALOG KONFIRMASI HAPUS (DELETE)
-  // ========================================================
   void _konfirmasiHapus(int id) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Hapus celengan?'),
-        content: const Text('Data yang terhapus dari database tidak bisa dikembalikan.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Hapus Celengan'),
+          content: const Text(
+            'Apakah Anda yakin ingin menghapus data ini?',
           ),
-          TextButton(
-            onPressed: () async {
-              bool sukses = await _apiService.deleteCelengan(id);
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final navigator = Navigator.of(ctx);
+                final messenger =
+                    ScaffoldMessenger.of(context);
 
-              if (!mounted) return;
+                final sukses = await context
+                    .read<CelenganProvider>()
+                    .removeCelengan(id);
 
-              if (sukses) {
-                Navigator.of(context).pop(); 
-                setState(() {}); // Segarkan UI
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Gagal menghapus data dari server.')),
+                if (!mounted) return;
+
+                navigator.pop();
+
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      sukses
+                          ? 'Data berhasil dihapus'
+                          : 'Gagal menghapus data',
+                    ),
+                  ),
                 );
-              }
-            },
-            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+              },
+              child: const Text(
+                'Hapus',
+                style: TextStyle(
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  // ========================================================
-  // 3. WIDGET INTERFACE UTAMA (READ)
-  // ========================================================
   @override
   Widget build(BuildContext context) {
+    final provider =
+        context.watch<CelenganProvider>();
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('CelenganKu ($_userName)'), // MENAMPILKAN BUKTI SESI USER AKTIF
-        centerTitle: false,
+        title: Text(
+          'CelenganKu ($_userName)',
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.red),
-            tooltip: 'Keluar Akun',
-            onPressed: _logout, // Memicu proses hapus sesi
+            onPressed: _logout,
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
           ),
         ],
       ),
-      body: FutureBuilder<List<CelenganModel>>(
-        future: _apiService.getAllCelengan(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-              child: Text(
-                'Belum ada data celengan.\nMulai buat celengan pertamamu!',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey, fontSize: 16),
-              ),
-            );
-          }
+      body: provider.isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : provider.listCelengan.isEmpty
+              ? const Center(
+                  child: Text(
+                    'Belum ada data celengan.\nTekan tombol + untuk menambah.',
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              : Column(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      color: Colors.blue.shade50,
+                      child: Text(
+                        'Total Target Tabungan : Rp ${provider.totalTargetAkumulatif.toStringAsFixed(0)}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount:
+                            provider.listCelengan.length,
+                        itemBuilder: (context, index) {
+                          final item =
+                              provider.listCelengan[index];
 
-          final listData = snapshot.data!;
-          return ListView.builder(
-            itemCount: listData.length,
-            itemBuilder: (context, i) {
-              return CelenganCard(
-                celengan: listData[i],
-                onEdit: () => _bukaFormDialog(listData[i]),
-                onDelete: () => _konfirmasiHapus(listData[i].id),
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
+                          return CelenganCard(
+                            celengan: item,
+                            onEdit: () =>
+                                _bukaFormDialog(item),
+                            onDelete: () =>
+                                _konfirmasiHapus(
+                              item.id,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+      floatingActionButton:
+          FloatingActionButton(
         onPressed: () => _bukaFormDialog(),
         child: const Icon(Icons.add),
       ),
